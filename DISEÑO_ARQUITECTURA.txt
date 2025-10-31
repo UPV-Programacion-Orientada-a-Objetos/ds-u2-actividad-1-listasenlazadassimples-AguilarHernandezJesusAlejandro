@@ -1,0 +1,355 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║           DISEÑO Y ARQUITECTURA - SISTEMA IOT DE SENSORES                  ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  1. JERARQUÍA DE CLASES (POLIMORFISMO)                                    █
+█████████████████████████████████████████████████████████████████████████████
+
+                        ┌─────────────────────────┐
+                        │     SensorBase          │
+                        │    (Clase Abstracta)    │
+                        ├─────────────────────────┤
+                        │ # char nombre[50]       │
+                        ├─────────────────────────┤
+                        │ + SensorBase(nombre)    │
+                        │ + ~SensorBase() virtual │
+                        │ + procesarLectura() = 0 │
+                        │ + imprimirInfo() = 0    │
+                        │ + registrarLecturaDesdeString() = 0 │
+                        │ + obtenerNombre()       │
+                        └────────────┬────────────┘
+                                     │
+                                     │ hereda
+                    ┌────────────────┴────────────────┐
+                    │                                 │
+          ┌─────────▼──────────┐          ┌──────────▼─────────┐
+          │ SensorTemperatura  │          │   SensorPresion    │
+          ├────────────────────┤          ├────────────────────┤
+          │ - ListaSensor      │          │ - ListaSensor      │
+          │   <float> historial│          │   <int> historial  │
+          ├────────────────────┤          ├────────────────────┤
+          │ + registrarLectura │          │ + registrarLectura │
+          │   (float)          │          │   (int)            │
+          │ + procesarLectura()│          │ + procesarLectura()│
+          │   → Elimina mínimo │          │   → Calcula        │
+          │   → Calcula promedio│         │     promedio       │
+          │ + imprimirInfo()   │          │ + imprimirInfo()   │
+          └────────────────────┘          └────────────────────┘
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  2. LISTA ENLAZADA GENÉRICA (TEMPLATE)                                    █
+█████████████████████████████████████████████████████████████████████████████
+
+    ┌──────────────────────────────────────────────────────────────┐
+    │         ListaSensor<T>  (Clase Template)                     │
+    ├──────────────────────────────────────────────────────────────┤
+    │  - Nodo<T>* cabeza                                           │
+    │  - int tamano                                                │
+    ├──────────────────────────────────────────────────────────────┤
+    │  + insertarAlFinal(T valor)                                  │
+    │  + eliminar(T valor) : bool                                  │
+    │  + buscar(T valor) : bool                                    │
+    │  + calcularPromedio() : T                                    │
+    │  + encontrarMinimo() : T                                     │
+    │  + eliminarMinimo() : T                                      │
+    │  + obtenerTamano() : int                                     │
+    │  + estaVacia() : bool                                        │
+    │  + imprimir()                                                │
+    │  + limpiar()                                                 │
+    └──────────────────────────────────────────────────────────────┘
+
+    ESTRUCTURA DEL NODO:
+    
+    template <typename T>
+    struct Nodo {
+        T dato;
+        Nodo<T>* siguiente;
+    }
+
+    REPRESENTACIÓN VISUAL DE LA LISTA:
+
+    cabeza → [dato|•] → [dato|•] → [dato|•] → [dato|nullptr]
+             Node 1     Node 2     Node 3     Node 4
+
+    INSTANCIAS CONCRETAS:
+    
+    ListaSensor<float>  → Para temperaturas (25.4, 28.7, etc.)
+    ListaSensor<int>    → Para presiones (98, 101, 99, etc.)
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  3. LISTA DE GESTIÓN POLIMÓRFICA                                          █
+█████████████████████████████████████████████████████████████████████████████
+
+    ┌──────────────────────────────────────────────────────────────┐
+    │              ListaGestion (NO Genérica)                      │
+    ├──────────────────────────────────────────────────────────────┤
+    │  - NodoSensor* cabeza                                        │
+    │  - int tamano                                                │
+    ├──────────────────────────────────────────────────────────────┤
+    │  + insertarSensor(SensorBase* sensor)                        │
+    │  + buscarSensor(const char* nombre) : SensorBase*            │
+    │  + procesarTodosSensores()  ← POLIMORFISMO                   │
+    │  + imprimirTodosSensores()                                   │
+    │  + obtenerTamano() : int                                     │
+    │  + estaVacia() : bool                                        │
+    └──────────────────────────────────────────────────────────────┘
+
+    ESTRUCTURA DEL NODO DE SENSOR:
+    
+    struct NodoSensor {
+        SensorBase* sensor;      ← Puntero POLIMÓRFICO
+        NodoSensor* siguiente;
+    }
+
+    CONTENIDO DE LA LISTA (EJEMPLO):
+
+    cabeza → [SensorBase*|•] → [SensorBase*|•] → [SensorBase*|nullptr]
+               ↓                  ↓
+           SensorTemp*        SensorPresion*
+            "T-001"              "P-105"
+
+    ⚡ POLIMORFISMO EN ACCIÓN:
+    
+    Al llamar a procesarTodosSensores(), itera sobre la lista y llama
+    a procesarLectura() de cada sensor. Aunque todos son SensorBase*,
+    cada uno ejecuta su implementación específica:
+    
+    - SensorTemperatura::procesarLectura() → Elimina mínimo
+    - SensorPresion::procesarLectura() → Calcula promedio
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  4. FLUJO DE DATOS DEL SISTEMA                                            █
+█████████████████████████████████████████████████████████████████████████████
+
+    ┌──────────────┐
+    │   ARDUINO    │  (Simulado)
+    │   Sensores   │
+    │   Físicos    │
+    └──────┬───────┘
+           │ Serial Port
+           │ Formato: "T:25.4" o "P:101"
+           ↓
+    ┌──────────────────┐
+    │ ArduinoSimulador │  Recibe paquetes y simula lecturas
+    └──────┬───────────┘
+           │
+           ↓
+    ┌──────────────────┐
+    │  Programa Main   │  Interfaz de usuario
+    └──────┬───────────┘
+           │
+           ↓
+    ┌──────────────────┐
+    │  ListaGestion    │  Almacena SensorBase* (polimórfico)
+    │                  │
+    │  ┌────────────┐  │
+    │  │ Sensor 1   │──┼──→ ListaSensor<float> [25.4, 28.7, 22.1]
+    │  └────────────┘  │
+    │  ┌────────────┐  │
+    │  │ Sensor 2   │──┼──→ ListaSensor<int>   [98, 101, 99]
+    │  └────────────┘  │
+    └──────────────────┘
+           │
+           ↓ procesarTodosSensores()
+    ┌──────────────────┐
+    │  PROCESAMIENTO   │  ← POLIMORFISMO
+    │                  │
+    │  Sensor 1 → procesarLectura() → Implementación de SensorTemperatura
+    │  Sensor 2 → procesarLectura() → Implementación de SensorPresion
+    └──────────────────┘
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  5. GESTIÓN DE MEMORIA (REGLA DE LOS TRES)                                █
+█████████████████████████████████████████████████████████████████████████████
+
+    ListaSensor<T> implementa:
+    
+    1. DESTRUCTOR (~ListaSensor)
+       ┌───────────────────────────────────────┐
+       │ while (cabeza != nullptr) {           │
+       │   temp = cabeza;                      │
+       │   cabeza = cabeza->siguiente;         │
+       │   delete temp; ← Libera cada nodo     │
+       │ }                                     │
+       └───────────────────────────────────────┘
+    
+    2. CONSTRUCTOR DE COPIA (ListaSensor(const ListaSensor& otra))
+       ┌───────────────────────────────────────┐
+       │ Hace COPIA PROFUNDA de todos los     │
+       │ nodos, no solo copia el puntero       │
+       └───────────────────────────────────────┘
+    
+    3. OPERADOR DE ASIGNACIÓN (operator=)
+       ┌───────────────────────────────────────┐
+       │ 1. Verifica auto-asignación           │
+       │ 2. Libera memoria existente           │
+       │ 3. Hace copia profunda                │
+       └───────────────────────────────────────┘
+
+    DESTRUCTOR VIRTUAL EN LA JERARQUÍA:
+    
+    class SensorBase {
+    public:
+        virtual ~SensorBase();  ← DEBE ser virtual
+    };
+    
+    ¿Por qué?
+    
+    SensorBase* sensor = new SensorTemperatura("T-001");
+    delete sensor;  ← Llama al destructor correcto gracias a virtual
+    
+    Sin virtual: Solo se llama ~SensorBase() → FUGA DE MEMORIA
+    Con virtual:  Se llama ~SensorTemperatura() y luego ~SensorBase() → ✓
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  6. EJEMPLO DE EJECUCIÓN PASO A PASO                                      █
+█████████████████████████████████████████████████████████████████████████████
+
+    PASO 1: Crear Sensores
+    ─────────────────────────────────────────────────────────
+    ListaGestion lista;
+    lista.insertarSensor(new SensorTemperatura("T-001"));
+    lista.insertarSensor(new SensorPresion("P-105"));
+    
+    Estado de memoria:
+    
+    lista → [T-001*] → [P-105*] → nullptr
+              ↓           ↓
+           Temp Obj    Presion Obj
+           historial   historial
+              ↓           ↓
+           Lista<float> Lista<int>
+           (vacía)      (vacía)
+
+
+    PASO 2: Registrar Lecturas
+    ─────────────────────────────────────────────────────────
+    T-001->registrarLectura(25.4);
+    T-001->registrarLectura(28.7);
+    T-001->registrarLectura(22.1);
+    
+    P-105->registrarLectura(98);
+    P-105->registrarLectura(101);
+    
+    Estado de memoria:
+    
+    T-001: [25.4] → [28.7] → [22.1] → nullptr
+    P-105: [98] → [101] → nullptr
+
+
+    PASO 3: Procesar Sensores (POLIMORFISMO)
+    ─────────────────────────────────────────────────────────
+    lista.procesarTodosSensores();
+    
+    Internamente:
+    
+    for cada sensor en lista:
+        sensor->procesarLectura();  ← Llama a la versión correcta
+    
+    T-001 ejecuta:
+        1. Encuentra mínimo: 22.1
+        2. Elimina: 22.1
+        3. Calcula promedio: (25.4 + 28.7) / 2 = 27.05
+    
+    P-105 ejecuta:
+        1. Calcula promedio: (98 + 101) / 2 = 99
+
+
+    PASO 4: Salir del Programa (Liberación Automática)
+    ─────────────────────────────────────────────────────────
+    } ← Fin del main
+    
+    El destructor de ListaGestion se ejecuta:
+    
+    1. Para cada sensor en la lista:
+       a. delete sensor;  ← Llama al destructor virtual
+       b. ~SensorTemperatura() se ejecuta
+       c. ~ListaSensor<float>() libera todos los nodos
+       d. ~SensorBase() se ejecuta
+    
+    2. Libera los nodos de ListaGestion
+    
+    Resultado: ¡CERO fugas de memoria! ✓
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  7. CONCEPTOS CLAVE IMPLEMENTADOS                                         █
+█████████████████████████████████████████████████████████████████████████████
+
+    ┌────────────────────────────────────────────────────────────┐
+    │  POLIMORFISMO                                              │
+    ├────────────────────────────────────────────────────────────┤
+    │  ✓ Punteros a clase base apuntan a clases derivadas       │
+    │  ✓ Métodos virtuales ejecutan la versión correcta         │
+    │  ✓ Destructores virtuales para limpieza correcta          │
+    └────────────────────────────────────────────────────────────┘
+
+    ┌────────────────────────────────────────────────────────────┐
+    │  CLASES ABSTRACTAS                                         │
+    ├────────────────────────────────────────────────────────────┤
+    │  ✓ Métodos virtuales puros (= 0)                           │
+    │  ✓ No se pueden instanciar directamente                   │
+    │  ✓ Fuerzan implementación en clases derivadas             │
+    └────────────────────────────────────────────────────────────┘
+
+    ┌────────────────────────────────────────────────────────────┐
+    │  TEMPLATES (GENÉRICOS)                                     │
+    ├────────────────────────────────────────────────────────────┤
+    │  ✓ Código reutilizable para múltiples tipos               │
+    │  ✓ ListaSensor<float>, ListaSensor<int>, etc.             │
+    │  ✓ Verificación de tipos en tiempo de compilación         │
+    └────────────────────────────────────────────────────────────┘
+
+    ┌────────────────────────────────────────────────────────────┐
+    │  LISTAS ENLAZADAS MANUALES                                 │
+    ├────────────────────────────────────────────────────────────┤
+    │  ✓ Sin uso de STL (std::list, std::vector)                │
+    │  ✓ Gestión manual de nodos con punteros                   │
+    │  ✓ Operaciones: insertar, eliminar, buscar                │
+    └────────────────────────────────────────────────────────────┘
+
+    ┌────────────────────────────────────────────────────────────┐
+    │  GESTIÓN DE MEMORIA                                        │
+    ├────────────────────────────────────────────────────────────┤
+    │  ✓ Regla de los tres implementada                          │
+    │  ✓ Prevención de fugas de memoria                          │
+    │  ✓ Evita copias superficiales                              │
+    └────────────────────────────────────────────────────────────┘
+
+
+█████████████████████████████████████████████████████████████████████████████
+█  8. ARCHIVOS Y RESPONSABILIDADES                                          █
+█████████████████████████████████████████████████████████████████████████████
+
+    main.cpp
+      ↳ Programa principal, menú de usuario, flujo de control
+
+    SensorBase.h/cpp
+      ↳ Clase abstracta base, define interfaz común
+
+    SensorTemperatura.h/cpp
+      ↳ Implementación concreta para temperatura (float)
+
+    SensorPresion.h/cpp
+      ↳ Implementación concreta para presión (int)
+
+    ListaSensor.h
+      ↳ Lista enlazada genérica con templates (todo en .h)
+
+    ListaGestion.h/cpp
+      ↳ Lista polimórfica que almacena SensorBase*
+
+    ArduinoSimulador.h/cpp
+      ↳ Simula captura de datos desde puerto serial
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                        FIN DEL DOCUMENTO DE DISEÑO
+═══════════════════════════════════════════════════════════════════════════════

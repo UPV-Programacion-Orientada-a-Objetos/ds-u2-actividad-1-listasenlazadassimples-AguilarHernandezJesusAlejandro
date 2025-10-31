@@ -1,0 +1,255 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║      INSTRUCCIONES RÁPIDAS - SISTEMA IOT DE SENSORES (C++)                ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📁 ARCHIVOS INCLUIDOS:
+══════════════════════════════════════════════════════════════════════════════
+
+ARCHIVOS DE CÓDIGO FUENTE:
+  - main.cpp                    → Programa principal con menú interactivo
+  - SensorBase.h/.cpp          → Clase base abstracta
+  - SensorTemperatura.h/.cpp   → Sensor de temperatura (float)
+  - SensorPresion.h/.cpp       → Sensor de presión (int)
+  - ListaSensor.h              → Lista enlazada genérica (template)
+  - ListaGestion.h/.cpp        → Lista polimórfica de gestión
+  - ArduinoSimulador.h/.cpp    → Simulador de captura desde Arduino
+
+ARCHIVOS DE CONFIGURACIÓN:
+  - CMakeLists.txt             → Configuración de CMake
+  - Doxyfile.in                → Configuración de Doxygen
+  - build.sh                   → Script de compilación automática
+  - .gitignore                 → Archivos a ignorar en Git
+
+DOCUMENTACIÓN:
+  - README.md                  → Documentación completa del proyecto
+  - INSTRUCCIONES_RAPIDAS.txt  → Este archivo
+
+EXTRA:
+  - arduino_sensor_example.ino → Código de ejemplo para Arduino real
+
+
+📋 OPCIÓN 1: COMPILACIÓN CON CMAKE (RECOMENDADO)
+══════════════════════════════════════════════════════════════════════════════
+
+1. Abrir terminal en el directorio del proyecto
+
+2. Crear directorio de compilación:
+   mkdir build
+   cd build
+
+3. Configurar proyecto:
+   cmake ..
+
+4. Compilar:
+   make
+
+5. Ejecutar:
+   ./SistemaIoTSensores
+
+
+📋 OPCIÓN 2: COMPILACIÓN MANUAL (SIN CMAKE)
+══════════════════════════════════════════════════════════════════════════════
+
+En Linux/macOS:
+  g++ -std=c++11 -Wall -O2 \
+      main.cpp \
+      SensorBase.cpp \
+      SensorTemperatura.cpp \
+      SensorPresion.cpp \
+      ListaGestion.cpp \
+      ArduinoSimulador.cpp \
+      -o SistemaIoTSensores
+  
+  ./SistemaIoTSensores
+
+En Windows (con MinGW):
+  g++ -std=c++11 -Wall -O2 ^
+      main.cpp ^
+      SensorBase.cpp ^
+      SensorTemperatura.cpp ^
+      SensorPresion.cpp ^
+      ListaGestion.cpp ^
+      ArduinoSimulador.cpp ^
+      -o SistemaIoTSensores.exe
+  
+  SistemaIoTSensores.exe
+
+
+📋 OPCIÓN 3: SCRIPT AUTOMÁTICO (LINUX/MACOS)
+══════════════════════════════════════════════════════════════════════════════
+
+1. Dar permisos de ejecución:
+   chmod +x build.sh
+
+2. Ejecutar:
+   ./build.sh
+
+
+📚 GENERAR DOCUMENTACIÓN CON DOXYGEN
+══════════════════════════════════════════════════════════════════════════════
+
+Si tienes Doxygen instalado:
+
+1. Desde el directorio build:
+   cd build
+   make doc
+
+2. Abrir documentación:
+   La documentación HTML se generará en: build/docs/html/index.html
+
+
+🎯 EJEMPLO DE USO DEL PROGRAMA
+══════════════════════════════════════════════════════════════════════════════
+
+Una vez ejecutado, verás el menú:
+
+╔═══════════════════════════════════════════════════════╗
+║              MENÚ PRINCIPAL - SISTEMA IoT              ║
+╚═══════════════════════════════════════════════════════╝
+
+  1. 🔧 Crear nuevo sensor
+  2. 📝 Registrar lectura manual
+  3. ⚙️  Procesar todos los sensores (Polimorfismo)
+  4. 📊 Mostrar información de sensores
+  5. 📡 Capturar datos desde Arduino
+  6. 🚪 Salir del sistema
+
+FLUJO TÍPICO DE USO:
+--------------------
+1. Crear sensor de temperatura (Opción 1)
+   - Nombre: T-001
+   - Tipo: 1 (Temperatura)
+
+2. Crear sensor de presión (Opción 1)
+   - Nombre: P-105
+   - Tipo: 2 (Presión)
+
+3. Registrar lecturas manuales (Opción 2)
+   - Sensor T-001: valores como 25.4, 28.7, 22.1
+   - Sensor P-105: valores como 98, 101, 99
+
+4. Ver información de sensores (Opción 4)
+
+5. Procesar sensores con polimorfismo (Opción 3)
+   - Para temperatura: elimina el valor más bajo
+   - Para presión: calcula promedio
+
+6. Capturar desde Arduino simulado (Opción 5)
+
+
+🔍 VERIFICAR QUE TODO FUNCIONE
+══════════════════════════════════════════════════════════════════════════════
+
+Después de compilar, el programa debería:
+✓ Mostrar el menú principal
+✓ Permitir crear sensores
+✓ Registrar lecturas
+✓ Procesar datos polimórficamente
+✓ Liberar memoria correctamente al salir
+
+
+⚠️ REQUISITOS DEL SISTEMA
+══════════════════════════════════════════════════════════════════════════════
+
+SOFTWARE NECESARIO:
+  - Compilador C++11 o superior (g++, clang++, MSVC)
+  - CMake 3.10+ (para compilación con CMake)
+  - Doxygen (opcional, solo para documentación)
+
+SISTEMAS OPERATIVOS SOPORTADOS:
+  - Linux (Ubuntu, Debian, Fedora, etc.)
+  - macOS
+  - Windows (con MinGW o Visual Studio)
+
+
+🐛 SOLUCIÓN DE PROBLEMAS COMUNES
+══════════════════════════════════════════════════════════════════════════════
+
+PROBLEMA: "cmake: command not found"
+SOLUCIÓN: Instalar CMake
+  - Ubuntu/Debian: sudo apt-get install cmake
+  - macOS: brew install cmake
+  - Windows: Descargar de https://cmake.org
+
+PROBLEMA: "g++: command not found"
+SOLUCIÓN: Instalar compilador
+  - Ubuntu/Debian: sudo apt-get install build-essential
+  - macOS: xcode-select --install
+  - Windows: Instalar MinGW o Visual Studio
+
+PROBLEMA: Errores de compilación con templates
+SOLUCIÓN: Asegurar que se use -std=c++11 o superior
+
+PROBLEMA: Warnings sobre tipos de dato
+SOLUCIÓN: Son normales, el código funciona correctamente
+
+
+📖 CONCEPTOS DEMOSTRADOS EN EL CÓDIGO
+══════════════════════════════════════════════════════════════════════════════
+
+1. POLIMORFISMO
+   - SensorBase* puede apuntar a SensorTemperatura o SensorPresion
+   - procesarLectura() ejecuta la versión correcta según el tipo real
+
+2. CLASES ABSTRACTAS
+   - SensorBase tiene métodos virtuales puros
+   - No se pueden instanciar directamente
+
+3. TEMPLATES (GENÉRICOS)
+   - ListaSensor<T> funciona con cualquier tipo
+   - ListaSensor<float> para temperaturas
+   - ListaSensor<int> para presiones
+
+4. LISTAS ENLAZADAS
+   - Implementación manual sin STL
+   - Gestión de memoria con new/delete
+
+5. REGLA DE LOS TRES
+   - Destructor
+   - Constructor de copia
+   - Operador de asignación
+
+6. DESTRUCTORES VIRTUALES
+   - ~SensorBase() es virtual
+   - Garantiza limpieza correcta al usar polimorfismo
+
+
+📝 ESTRUCTURA DEL PROYECTO
+══════════════════════════════════════════════════════════════════════════════
+
+SistemaIoTSensores/
+├── Archivos de cabecera (.h)
+│   ├── SensorBase.h          → Clase abstracta base
+│   ├── SensorTemperatura.h   → Sensor derivado
+│   ├── SensorPresion.h       → Sensor derivado
+│   ├── ListaSensor.h         → Lista genérica (template)
+│   ├── ListaGestion.h        → Lista polimórfica
+│   └── ArduinoSimulador.h    → Simulador de hardware
+│
+├── Archivos de implementación (.cpp)
+│   ├── main.cpp              → Programa principal
+│   ├── SensorBase.cpp        
+│   ├── SensorTemperatura.cpp 
+│   ├── SensorPresion.cpp     
+│   ├── ListaGestion.cpp      
+│   └── ArduinoSimulador.cpp  
+│
+├── Configuración
+│   ├── CMakeLists.txt        → Build system
+│   ├── Doxyfile.in           → Documentación
+│   ├── build.sh              → Script de compilación
+│   └── .gitignore            → Control de versiones
+│
+└── Documentación
+    ├── README.md             → Guía completa
+    └── INSTRUCCIONES_RAPIDAS.txt → Esta guía
+
+
+✨ ¡LISTO PARA USAR!
+══════════════════════════════════════════════════════════════════════════════
+
+El proyecto está completo y listo para compilar y ejecutar.
+
+Para más información detallada, consulta el archivo README.md
+
+¡Disfruta del Sistema IoT de Sensores! 🚀
